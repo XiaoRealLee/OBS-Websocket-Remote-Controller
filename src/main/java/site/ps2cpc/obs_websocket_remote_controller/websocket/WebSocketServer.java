@@ -1,27 +1,19 @@
 package site.ps2cpc.obs_websocket_remote_controller.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.ContextLoader;
-import org.springframework.web.context.WebApplicationContext;
-import site.ps2cpc.obs_websocket_remote_controller.ObsWebsocketRemoteControllerApplication;
 import site.ps2cpc.obs_websocket_remote_controller.dto.CommandHandleResult;
 import site.ps2cpc.obs_websocket_remote_controller.dto.config.OBSSetting;
 import site.ps2cpc.obs_websocket_remote_controller.service.CommandHandleService;
 
-import javax.annotation.PostConstruct;
 import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
@@ -114,8 +106,10 @@ public class WebSocketServer {
         CommandHandleService commandHandleService = context.getBean(CommandHandleService.class);
         OBSSetting obsSetting = context.getBean(OBSSetting.class);
 
-        CommandHandleResult commandHandleResult = commandHandleService.handleMessage(message, obsSetting);
+        CommandHandleResult commandHandleResult = commandHandleService.handleMessage(message);
         sendCommandToSid(commandHandleResult);
+
+
 
         //这里应该进行消息的转换和处理。
 //        //群发消息
@@ -128,20 +122,23 @@ public class WebSocketServer {
 //        }
     }
 
+
     private void sendCommandToSid(CommandHandleResult commandHandleResult) {
         if (commandHandleResult == null) {
             log.error("命令为空");
             return;
         }
-        commandHandleResult.getSidMessageMap().forEach((targetSid, message) -> {
-            if (websocketMap.containsKey(targetSid)) {
-                try {
-                    websocketMap.get(targetSid).sendMessage(message);
-                } catch (IOException e) {
-                    log.error(String.format("向 %s 发送消息 %s 失败：%s", targetSid, message, e.getMessage()));
+        if (commandHandleResult.getSidMessageMap()!=null) {
+            commandHandleResult.getSidMessageMap().forEach((targetSid, message) -> {
+                if (websocketMap.containsKey(targetSid)) {
+                    try {
+                        websocketMap.get(targetSid).sendMessage(message);
+                    } catch (IOException e) {
+                        log.error(String.format("向 %s 发送消息 %s 失败：%s", targetSid, message, e.getMessage()));
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     @OnError

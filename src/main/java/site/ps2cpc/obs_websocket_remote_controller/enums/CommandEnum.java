@@ -1,6 +1,6 @@
 package site.ps2cpc.obs_websocket_remote_controller.enums;
 
-public enum CommandTypeEnum {
+public enum CommandEnum {
 
     PING_PONG,
     SLAVE_START_RECORDING,

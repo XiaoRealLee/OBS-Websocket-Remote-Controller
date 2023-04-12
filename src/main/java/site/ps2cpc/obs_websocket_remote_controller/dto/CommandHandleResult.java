@@ -9,5 +9,6 @@ import java.util.Map;
 @Accessors(chain = true)
 public class CommandHandleResult {
 
-    Map<String,String> sidMessageMap;
+    private String senderSID;
+    private Map<String,String> sidMessageMap;
 }
