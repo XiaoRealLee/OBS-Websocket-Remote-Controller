@@ -87,22 +87,35 @@ def stop_recording():
 
     obs.obs_frontend_recording_stop()
 
-def sendMessageToCamera(currentSceneName):
+def sendMessageToCamera(currentSceneName, isPreview):
 
-    targetObSid = scene_camera_dictionary[currentSceneName]
+    targetObSid = scene_camera_dictionary.get(currentSceneName,None)
     if (targetObSid!=None):
-        metadata = {'sid':targetObSid}
+        metadata = {'sid':targetObSid,'isPreview': isPreview}
         msg = buildControlCommandMessage("OBSERVER_STATUS",None,metadata);
         wsConnect.send(msg)
+    else :
+        metadata={"sid":None, 'isPrevies': isPreview}
+        msg = buildControlCommandMessage("OBSERVER_STATUS",None,metadata)
+        wsConnect.send(msg)
 
-def on_event(event):
+def on_scene_changed_event(event):
     if event == obs.OBS_FRONTEND_EVENT_SCENE_CHANGED:
         currentScene = obs.obs_frontend_get_current_scene();
         currentSceneName = obs.obs_source_get_name(currentScene)
         obs.obs_source_release(currentScene)
         
 
-        sendMessageToCamera(currentSceneName)
+        sendMessageToCamera(currentSceneName,False)
+
+def on_preview_scene_changed_event(event):
+    if event == obs.OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
+        currentScene = obs.obs_frontend_get_current_preview_scene();
+        currentSceneName = obs.obs_source_get_name(currentScene)
+        obs.obs_source_release(currentScene)
+        
+
+        sendMessageToCamera(currentSceneName,True)
 
 
 def wsBuildConnect():
@@ -124,7 +137,8 @@ def script_description():
 def script_load(settings):
     global wsConnect
     print("script_load")
-    obs.obs_frontend_add_event_callback(on_event)
+    obs.obs_frontend_add_event_callback(on_scene_changed_event)
+    obs.obs_frontend_add_event_callback(on_preview_scene_changed_event)
     wsBuildConnect()
 
 

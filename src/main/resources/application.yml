@@ -1,3 +1,11 @@
+server:
+  port: 8080
+
+spring:
+  web:
+    resources:
+      static-locations: classpath:/static/, classpath:/templates/
+
 obs:
   admin:
     sid: admin
@@ -11,5 +19,3 @@ obs:
     ob6: 123456
     ob7: 123456
     ob8: 123456
-
-

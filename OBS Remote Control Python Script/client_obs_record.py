@@ -9,9 +9,9 @@ import time
 import threading
 
 
-IP_ADDR = "127.0.0.1"
-IP_PORT = "8080"
-SID = "ob1"
+IP_ADDR = "xm1.dc.sunderer.games"
+IP_PORT = "9961"
+SID = "ob2"
 secret = "123456"
 
 
