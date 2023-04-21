@@ -7,7 +7,9 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.system.ApplicationHome;
 import org.springframework.stereotype.Service;
 import site.ps2cpc.obs_websocket_remote_controller.dto.CommandHandleResult;
 import site.ps2cpc.obs_websocket_remote_controller.dto.ControlCommandMessage;
@@ -15,18 +17,38 @@ import site.ps2cpc.obs_websocket_remote_controller.dto.SlaveControlMessage;
 import site.ps2cpc.obs_websocket_remote_controller.dto.config.OBSSetting;
 import site.ps2cpc.obs_websocket_remote_controller.enums.CommandType;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
 @Slf4j
-public class CommandHandleService {
+public class CommandHandleService implements DisposableBean {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private OBSSetting obsSetting;
+    private FileWriter fileWriter;
 
-    public CommandHandleService(@Autowired OBSSetting obsSetting) {
+    public CommandHandleService(@Autowired OBSSetting obsSetting) throws IOException {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
         this.obsSetting = obsSetting;
+        ApplicationHome home = new ApplicationHome(getClass());
+        File jarFile = home.getSource();
+        String commandLogFilePath = String.format("%s%s%s-command-log.txt",jarFile.getParent(),File.separator,simpleDateFormat.format(new Date()));
+        File commandLogFile = new File(commandLogFilePath);
+        if (commandLogFile.exists()){
+            commandLogFile.delete();
+        }
+        commandLogFile.getParentFile().mkdirs();
+        commandLogFile.getParentFile().createNewFile();
+        log.debug(String.valueOf(commandLogFile.exists()));
+
+
+        this.fileWriter = new FileWriter(commandLogFile);
     }
 
     public CommandHandleResult handleMessage(String message) {
@@ -66,6 +88,23 @@ public class CommandHandleService {
                         .setTimestamp(new Date())
                         .setMetadata(controlCommandMessage.getMetadata());
                 List<String> allSidList = buildAllSlaveList();
+
+
+                Map<String, String> metadata = controlCommandMessage.getMetadata();
+
+                if (metadata!=null){
+                    if (metadata.containsKey("msg")) {
+                        try {
+                            this.fileWriter.write(metadata.get("msg"));
+                            this.fileWriter.write("\n");
+                            this.fileWriter.flush();
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+
                 return sendSlaveControlMessageToSid(allSidList, slaveControlMessage);
             }
             default -> {
@@ -76,9 +115,25 @@ public class CommandHandleService {
                         .setMessageSource(controlCommandMessage.getSid())
                         .setTimestamp(new Date())
                         .setMetadata(controlCommandMessage.getMetadata());
+
+
+                Map<String, String> metadata = controlCommandMessage.getMetadata();
+
+                if (metadata!=null){
+                    if (metadata.containsKey("msg")) {
+                        try {
+                            this.fileWriter.write(metadata.get("msg"));
+                            this.fileWriter.write("\n");
+                            this.fileWriter.flush();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
                 return sendSlaveControlMessageToSid(controlCommandMessage.getSidList(), slaveControlMessage);
             }
         }
+
     }
 
     private List<String> buildAllSlaveList() {
@@ -121,6 +176,13 @@ public class CommandHandleService {
             }
         }
         return null;
+    }
+
+    @Override
+    public void destroy() throws Exception {
+
+        this.fileWriter.flush();
+        this.fileWriter.close();
     }
 
     @Data

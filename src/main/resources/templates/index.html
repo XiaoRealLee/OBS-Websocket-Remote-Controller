@@ -22,9 +22,21 @@
 <button onclick="openWebSocket()">开启WebSocket连接</button>
 <button onclick="closeWebSocket()">关闭WebSocket连接</button>
 <hr/>
+
+<button onclick="function cleanSlaveSid() {
+document.getElementById('slaveSid').innerHTML=''
+}
+cleanSlaveSid()">清空slave sid</button>
 <p id="slaveSid"></p>
 <input id="slaveSidInputBox" type="text">
 <button onclick="addSlaveSidInput()">添加slave sid</button>
+
+<hr/>
+<span>备注：</span><input id="remarkInput" type="text"/><button id="cleanRemark" onclick="function cleanRemark() {
+document.getElementById('remarkInput').value = ''
+}
+cleanRemark()">清空备注</button>
+<br />
 <button onclick="startRecording()">开始录制</button>
 <button onclick="stopRecording()">停止录制</button>
 <hr/>
@@ -44,7 +56,7 @@
         document.getElementById("sid").value+"/"+
         document.getElementById("secret").value;
     }
-    function buildRecordingCommand(isStart){
+    function buildRecordingCommand(isStart, msg){
         let sidList = document.getElementById('slaveSid').innerHTML.split(',')
         let commandName = isStart?'SLAVE_START_RECORDING':'SLAVE_STOP_RECORDING'
         let command = {
@@ -52,6 +64,9 @@
             'secret': document.getElementById("secret").value,
             'command':commandName,
             'sidList': sidList,
+            'metadata':{
+                'msg':msg
+            },
             'timestamp':new Date().getTime()
         }
 
@@ -116,10 +131,21 @@
     }
 
     function startRecording(){
-        websocket.send(buildRecordingCommand(true))
+        let currentDate = new Date()
+        let remark = document.getElementById("remarkInput").value
+        let slaveSid = document.getElementById('slaveSid').innerHTML
+
+        let msg = currentDate+" : "+slaveSid+" - "+remark+" 开始录制"
+        websocket.send(buildRecordingCommand(true,msg))
+        setMessageInnerHTML(msg)
     }
     function stopRecording(){
-        websocket.send(buildRecordingCommand(false))
+        let currentDate = new Date()
+        let remark = document.getElementById("remarkInput").value
+        let slaveSid = document.getElementById('slaveSid').innerHTML
+        let msg = currentDate+" : "+slaveSid+" - "+remark+" 停止录制"
+        websocket.send(buildRecordingCommand(false,msg))
+        setMessageInnerHTML(msg)
     }
 
     //发送消息
