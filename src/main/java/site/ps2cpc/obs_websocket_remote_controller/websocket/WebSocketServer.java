@@ -13,6 +13,8 @@ import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,7 +28,7 @@ public class WebSocketServer {
 
     //    private static CopyOnWriteArraySet<WebSocketServer> webSocketServers
 //            = new CopyOnWriteArraySet<>();
-    private static final ConcurrentHashMap<String, WebSocketServer> websocketMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Set<WebSocketServer>> websocketMap = new ConcurrentHashMap<>();
 
 
     private static ConfigurableApplicationContext context;
@@ -39,21 +41,35 @@ public class WebSocketServer {
     public WebSocketServer() {
     }
 
-    public static void sendInfo(String message, @PathParam("sid") String sid) throws IOException {
+    public static void sendInfo(String message, @PathParam("sid") String sid) {
         log.info("推送消息到窗口" + sid + "，推送内容:" + message);
 
-        for (WebSocketServer item : websocketMap.values()) {
-            try {
-                //这里可以设定只推送给这个sid的，为null则全部推送
-                if (sid == null) {
-//                    item.sendMessage(message);
-                } else if (item.sid.equals(sid)) {
-                    item.sendMessage(message);
-                }
-            } catch (IOException e) {
-                continue;
-            }
+//        for (Set<WebSocketServer> sessionSet : websocketMap.values()) {
+//            try {
+//                //这里可以设定只推送给这个sid的，为null则全部推送
+//                if (sid == null) {
+////                    item.sendMessage(message);
+//                } else if (sessionSet.sid.equals(sid)) {
+//                    sessionSet.sendMessage(message);
+//                }
+//            } catch (IOException e) {
+//                continue;
+//            }
+//        }
+
+        if (!websocketMap.containsKey(sid)) {
+            return;
         }
+        Set<WebSocketServer> webSocketServers = websocketMap.get(sid);
+        webSocketServers.forEach(server -> {
+            try {
+                server.sendMessage(message);
+            } catch (IOException e) {
+                log.error(String.format("Send Message failed: %s. %s, %s", e.getMessage(), sid, message));
+            }
+        });
+
+
     }
 
     public static void setApplicationContext(ConfigurableApplicationContext configurableApplicationContext) {
@@ -73,7 +89,12 @@ public class WebSocketServer {
         }
 
         this.session = session;
-        websocketMap.put(sid, this);
+        Set<WebSocketServer> webSocketServers = websocketMap.get(sid);
+        if (webSocketServers == null) {
+            webSocketServers = new HashSet<>();
+            websocketMap.put(sid, webSocketServers);
+        }
+        webSocketServers.add(this);
         this.sid = sid;
         addOnlineCount();
 
@@ -93,7 +114,10 @@ public class WebSocketServer {
     @OnClose
 
     public void onClose() {
-        websocketMap.remove(this.sid);
+        Set<WebSocketServer> webSocketServers = websocketMap.get(this.sid);
+        if (webSocketServers != null) {
+            webSocketServers.remove(this);
+        }
         subOnlineCount();
         log.info("释放的sid为：" + sid);
         log.info("有一连接关闭！当前在线人数为" + getOnlineCount());
@@ -131,11 +155,8 @@ public class WebSocketServer {
         if (commandHandleResult.getSidMessageMap() != null) {
             commandHandleResult.getSidMessageMap().forEach((targetSid, message) -> {
                 if (websocketMap.containsKey(targetSid)) {
-                    try {
-                        websocketMap.get(targetSid).sendMessage(message);
-                    } catch (IOException e) {
-                        log.error(String.format("向 %s 发送消息 %s 失败：%s", targetSid, message, e.getMessage()));
-                    }
+
+                    WebSocketServer.sendInfo(message, targetSid);
                 }
             });
         }

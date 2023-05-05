@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import site.ps2cpc.obs_websocket_remote_controller.websocket.WebSocketServer;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,14 +26,13 @@ public class WebSocketController {
     @ResponseBody
     @RequestMapping("/socket/push/{cid}")
     public Map pushToWeb(@PathVariable String cid, String message) {
-        Map<String,Object> result = new HashMap<>();
-        try {
-            WebSocketServer.sendInfo(message, cid);
-            result.put("code", cid);
-            result.put("msg", message);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Map<String, Object> result = new HashMap<>();
+
+        WebSocketServer.sendInfo(message, cid);
+        result.put("code", cid);
+        result.put("msg", message);
+
         return result;
     }
+
 }
