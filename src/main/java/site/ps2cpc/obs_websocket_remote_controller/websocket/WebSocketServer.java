@@ -22,11 +22,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ServerEndpoint("/websocket/{sid}/{secret}")
 public class WebSocketServer {
 
-    private static AtomicInteger onlineCount = new AtomicInteger(0);
+    private static final AtomicInteger onlineCount = new AtomicInteger(0);
 
     //    private static CopyOnWriteArraySet<WebSocketServer> webSocketServers
 //            = new CopyOnWriteArraySet<>();
-    private static ConcurrentHashMap<String, WebSocketServer> websocketMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, WebSocketServer> websocketMap = new ConcurrentHashMap<>();
 
 
     private static ConfigurableApplicationContext context;
@@ -64,6 +64,7 @@ public class WebSocketServer {
     public void onOpen(Session session, @PathParam("sid") String sid, @PathParam("secret") String secret) {
         if (!verifySid(sid, secret)) {
             try {
+                session.getBasicRemote().sendText("SID与密钥不匹配");
                 session.close();
                 return;
             } catch (IOException e) {
@@ -104,11 +105,10 @@ public class WebSocketServer {
         log.info("收到来自窗口" + sid + "的信息:" + message);
 
         CommandHandleService commandHandleService = context.getBean(CommandHandleService.class);
-        OBSSetting obsSetting = context.getBean(OBSSetting.class);
+//        OBSSetting obsSetting = context.getBean(OBSSetting.class);
 
         CommandHandleResult commandHandleResult = commandHandleService.handleMessage(message);
         sendCommandToSid(commandHandleResult);
-
 
 
         //这里应该进行消息的转换和处理。
@@ -125,10 +125,10 @@ public class WebSocketServer {
 
     private void sendCommandToSid(CommandHandleResult commandHandleResult) {
         if (commandHandleResult == null) {
-            log.error("命令为空");
+            log.info("命令为空");
             return;
         }
-        if (commandHandleResult.getSidMessageMap()!=null) {
+        if (commandHandleResult.getSidMessageMap() != null) {
             commandHandleResult.getSidMessageMap().forEach((targetSid, message) -> {
                 if (websocketMap.containsKey(targetSid)) {
                     try {
