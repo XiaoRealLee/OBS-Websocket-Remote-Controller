@@ -11,45 +11,42 @@ import threading
 
 IP_ADDR = "127.0.0.1"
 IP_PORT = "8080"
-SID = "ob1"
-secret = "123456"
+SID = "admin"
+secret = "6657"
 
 
-scene_camera_dictionary={
-    'PS2CPC 军团战直播': 'ob1',
-    'OBS 图测试': 'ob2',
-    '戴尔显示器': 'ob3',
-    '便携显示器': 'ob4'
+scene_camera_dictionary = {
+    'TestOB1': ['ob1'],
+    'TestOB2': ['ob2'],
+    'TestOB3': ['ob3'],
+    'Empty': []
 }
 
 
 wsConnect = None
 
 
-
 def buildFullUri():
     return "ws://"+IP_ADDR+":"+IP_PORT+"/websocket/"+SID+"/"+secret
 
 
-def buildControlCommandMessage(command, message, metadata):
-    global SID,secret
+def buildControlCommandMessage(command, sidList, message, metadata):
+    global SID, secret
     result = {
-        'sid' : SID,
-        'secret' : secret,
-        'command' : command,
-        'message' : message,
-        'metadata' : metadata,
-        'timestamp' : int(round(time.time()*1000))
+        'sid': SID,
+        'secret': secret,
+        'command': command,
+        'sidList': sidList,
+        'message': message,
+        'metadata': metadata,
+        'timestamp': int(round(time.time()*1000))
     }
 
     return json.dumps(result)
 
 
-
-
 def messageTick():
     wsConnect.send("wdnmd!")
-
 
 
 def on_open(wsapp):
@@ -87,47 +84,46 @@ def stop_recording():
 
     obs.obs_frontend_recording_stop()
 
-def sendMessageToCamera(currentSceneName, isPreview):
 
-    targetObSid = scene_camera_dictionary.get(currentSceneName,None)
-    if (targetObSid!=None):
-        metadata = {'sid':targetObSid,'isPreview': isPreview}
-        msg = buildControlCommandMessage("OBSERVER_STATUS",None,metadata);
-        wsConnect.send(msg)
-    else :
-        metadata={"sid":None, 'isPrevies': isPreview}
-        msg = buildControlCommandMessage("OBSERVER_STATUS",None,metadata)
-        wsConnect.send(msg)
+def sendMessageToServer(currentSceneName, isPreview):
+
+    commandName = "OBSERVER_STATUS_PREVIEW" if isPreview else "OBSERVER_STATUS_PLAYING"
+
+    targetObSid = scene_camera_dictionary.get(currentSceneName, None)
+    metadata = {'msg':str(time.localtime(time.time()))+ commandName+" all clear" if targetObSid==None else str(time.localtime(time.time()))+commandName+" " + str(targetObSid)}
+
+    targetObSid = scene_camera_dictionary.get(currentSceneName, None)
+    msg = buildControlCommandMessage(commandName,targetObSid,None,metadata)
+    wsConnect.send(msg)
+
 
 def on_scene_changed_event(event):
     if event == obs.OBS_FRONTEND_EVENT_SCENE_CHANGED:
-        currentScene = obs.obs_frontend_get_current_scene();
+        currentScene = obs.obs_frontend_get_current_scene()
         currentSceneName = obs.obs_source_get_name(currentScene)
         obs.obs_source_release(currentScene)
-        
 
-        sendMessageToCamera(currentSceneName,False)
+        sendMessageToServer(currentSceneName, False)
+
 
 def on_preview_scene_changed_event(event):
     if event == obs.OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED:
-        currentScene = obs.obs_frontend_get_current_preview_scene();
+        currentScene = obs.obs_frontend_get_current_preview_scene()
         currentSceneName = obs.obs_source_get_name(currentScene)
         obs.obs_source_release(currentScene)
-        
 
-        sendMessageToCamera(currentSceneName,True)
+        sendMessageToServer(currentSceneName, True)
 
 
 def wsBuildConnect():
     global wsConnect
     wsConnect = websocket.WebSocketApp(buildFullUri(),
-                                        on_open=on_open,
-                                        on_message=on_message,
-                                        on_error=on_error, on_close=on_close)
+                                       on_open=on_open,
+                                       on_message=on_message,
+                                       on_error=on_error, on_close=on_close)
     wst = threading.Thread(target=wsConnect.run_forever)
     wst.daemon = True
     wst.start()
-
 
 
 def script_description():
@@ -140,7 +136,6 @@ def script_load(settings):
     obs.obs_frontend_add_event_callback(on_scene_changed_event)
     obs.obs_frontend_add_event_callback(on_preview_scene_changed_event)
     wsBuildConnect()
-
 
     # obs.timer_add(messageTick, 1000)
 
