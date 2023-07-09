@@ -101,6 +101,13 @@ public class CommandHandleService implements DisposableBean {
 
                 return buildObserverStatusChangeSlaveControlMessageToSid(controlCommandMessage.getSidList(), slaveControlMessage, otherSlaveControlMessage);
             }
+            case MINI_VIEW_ADD, MINI_VIEW_CLEAR -> {
+                SlaveControlMessage slaveControlMessage;
+                slaveControlMessage = getSlaveControlMessage(controlCommandMessage);
+                List<String> sidList = new ArrayList<>(3);
+                sidList.add(controlCommandMessage.getSid());
+                return buildDefaultSlaveControlMessageToSid(sidList, slaveControlMessage);
+            }
             default -> {
                 SlaveControlMessage slaveControlMessage = new SlaveControlMessage()
                         .setMessageSource(controlCommandMessage.getSid())
@@ -127,7 +134,6 @@ public class CommandHandleService implements DisposableBean {
                 return buildDefaultSlaveControlMessageToSid(controlCommandMessage.getSidList(), slaveControlMessage);
             }
         }
-
     }
 
     private SlaveControlMessage getSlaveControlMessage(ControlCommandMessage controlCommandMessage) {
@@ -200,6 +206,9 @@ public class CommandHandleService implements DisposableBean {
         if (allSlaveList != null && allSlaveList.size() > 0) {
             sidCommandMap = new HashMap<>();
             for (String sid : allSlaveList) {
+                if (sidList==null || sidList.size()==0){
+                    sidCommandMap.put(sid,otherSlaveCommandStr);
+                }
                 if (sidList.contains(sid)) {
                     sidCommandMap.put(sid, targetSlaveCommandStr);
                 } else {

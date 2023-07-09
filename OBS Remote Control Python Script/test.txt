@@ -1,0 +1,4 @@
+aaa|bbb|srt://xm1.dc.sunderer.games:65530?streamid=#!::r=live/livestream?secret=1d0753a733f64653a2043cf71faa3959,m=request
+ccc|ddd|srt://xm1.dc.sunderer.games:65530?streamid=#!::r=live/livestream2?secret=1d0753a733f64653a2043cf71faa3959,m=request
+eee|fff|blyatman3
+ggg|hhh|blyatman4
