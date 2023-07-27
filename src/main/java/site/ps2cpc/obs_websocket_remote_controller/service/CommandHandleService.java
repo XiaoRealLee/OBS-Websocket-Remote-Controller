@@ -101,7 +101,7 @@ public class CommandHandleService implements DisposableBean {
 
                 return buildObserverStatusChangeSlaveControlMessageToSid(controlCommandMessage.getSidList(), slaveControlMessage, otherSlaveControlMessage);
             }
-            case MINI_VIEW_ADD, MINI_VIEW_CLEAR -> {
+            case MINI_VIEW_ADD, MINI_VIEW_CLEAR ,BROWSER_SOURCE_HIDE,BROWSER_SOURCE_SHOW-> {
                 SlaveControlMessage slaveControlMessage;
                 slaveControlMessage = getSlaveControlMessage(controlCommandMessage);
                 List<String> sidList = new ArrayList<>(3);

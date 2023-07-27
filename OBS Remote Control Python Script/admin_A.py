@@ -78,6 +78,10 @@ def on_message(wsapp, data):
             return update_miniview(receivedCommand)
         case "MINI_VIEW_CLEAR":
             return clean_miniview()
+        case "BROWSER_SOURCE_SHOW":
+            return showBrowserSource(receivedCommand)
+        case "BROWSER_SOURCE_HIDE":
+            return hideBrowserSource(receivedCommand)
 
 
 def on_error(wsapp, e):
@@ -186,6 +190,10 @@ def update_miniview(receivedCommand):
     currentPreviewSceneName = obs.obs_source_get_name(currentPreviewSceneSource)
 
     # 查找当前活动的 preview source，并添加新的  miniview
+    print("~~~~~~~~~~~~~~~~~~~~~")
+    print(currentPreviewSceneName)
+    print(metadata["obsObjectName"])
+    print("~~~~~~~~~~~~~~~~~~~~~")
     newPreviewName = currentPreviewSceneName + "-" + metadata["obsObjectName"]
 
     check_exist = obs.obs_get_source_by_name(newPreviewName)
@@ -227,6 +235,7 @@ def delete_other_preview_miniview():
                 obs.obs_source_release(delete_miniview_source)
         obs.obs_source_release(temp_scene)
 
+
 def delete_current_playing_miniview():
     global current_playing_miniview_source_name
 
@@ -247,6 +256,40 @@ def clean_miniview():
 
     isKeepMiniview = None
     latest_miniview_command = None
+
+
+def showBrowserSource(command):
+    # 在当前场景里找command中有名字后缀的浏览器源
+
+    browserSourceName = command['metadata']['name']
+    currentSceneSource = obs.obs_frontend_get_current_scene()
+    currentSceneName = obs.obs_source_get_name(currentSceneSource)
+    currentScene = obs.obs_scene_from_source(currentSceneSource)
+    browserSceneItem = obs.obs_scene_find_source(currentScene, currentSceneName + "-" + browserSourceName)
+
+    print(browserSceneItem is not None)
+    if browserSceneItem is not None:
+        # 移动到顶层
+        obs.obs_sceneitem_set_order(browserSceneItem, obs.OBS_ORDER_MOVE_TOP)
+        # 设置为可见
+        obs.obs_sceneitem_set_visible(browserSceneItem, True)
+
+    obs.obs_source_release(currentSceneSource)
+
+
+def hideBrowserSource(command):
+    browserSourceName = command['metadata']['name']
+    currentSceneSource = obs.obs_frontend_get_current_scene()
+    currentSceneName = obs.obs_source_get_name(currentSceneSource)
+    currentScene = obs.obs_scene_from_source(currentSceneSource)
+    browserSceneItem = obs.obs_scene_find_source(currentScene, currentSceneName + "-" + browserSourceName)
+
+    print(browserSceneItem is not None)
+    if browserSceneItem is not None:
+        # 设置为不可见
+        obs.obs_sceneitem_set_visible(browserSceneItem, False)
+
+    obs.obs_source_release(currentSceneSource)
 
 
 def on_scene_changed_event(event):
@@ -318,7 +361,7 @@ def script_load(settings):
     print("script_load")
     obs.obs_frontend_add_event_callback(on_scene_changed_event)
     obs.obs_frontend_add_event_callback(on_preview_scene_changed_event)
-    scenesource = obs.obs_frontend_get_current_scene();
+    scenesource = obs.obs_frontend_get_current_scene()
 
     current_scene = obs.obs_source_get_name(scenesource)
     print(current_scene)
