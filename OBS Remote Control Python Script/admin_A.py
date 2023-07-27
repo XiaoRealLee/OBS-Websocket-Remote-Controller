@@ -270,7 +270,7 @@ def showBrowserSource(command):
     print(browserSceneItem is not None)
     if browserSceneItem is not None:
         # 移动到顶层
-        obs.obs_sceneitem_set_order(browserSceneItem, obs.OBS_ORDER_MOVE_TOP)
+        # obs.obs_sceneitem_set_order(browserSceneItem, obs.OBS_ORDER_MOVE_TOP)
         # 设置为可见
         obs.obs_sceneitem_set_visible(browserSceneItem, True)
 
