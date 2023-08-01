@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  web:
+    resources:
+      static-locations: classpath:/static/, classpath:/templates/
+obs:
+  admin:
+    sid: admin
+    secret: 6657
+  slave:
+    ob1: 123456
+    ob2: 123456
+    ob3: 123456
+    ob4: 123456
+    ob5: 123456
+    ob6: 123456
+    ob7: 123456
+    ob8: 123456
