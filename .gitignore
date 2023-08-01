@@ -32,6 +32,7 @@ build/
 ### VS Code ###
 .vscode/
 *.pyc
+<<<<<<< HEAD
 
 # ---> Python
 # Byte-compiled / optimized / DLL files
@@ -97,3 +98,5 @@ target/
 *local_settings.py
 .idea/*
 media/*
+=======
+>>>>>>> b1d95e81600ab7c969af30dfe883aa3c8a652542

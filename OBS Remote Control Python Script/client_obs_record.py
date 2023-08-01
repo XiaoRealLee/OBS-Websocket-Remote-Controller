@@ -1,5 +1,6 @@
 # import obspython as obs
 from obs_scripting import obspython as obs
+
 from random import randint
 import requests
 import json
@@ -13,6 +14,25 @@ IP_ADDR = "xm1.dc.sunderer.games"
 IP_PORT = "9961"
 SID = "ob2"
 secret = "123456"
+
+wsConnect = None
+
+
+def buildFullUri():
+    return "ws://" + IP_ADDR + ":" + IP_PORT + "/websocket/" + SID + "/" + secret
+
+
+def buildControlCommandMessage(command, message, metadata):
+    global SID, secret
+    result = {
+        'sid': SID,
+        'secret': secret,
+        'command': command,
+        'message': message,
+        'metadata': metadata,
+        'timestamp': int(round(time.time() * 1000))
+    }
+
 
 wsConnect = None
 
@@ -85,6 +105,7 @@ def script_load(settings):
                                        on_open=on_open,
                                        on_message=on_message,
                                        on_error=on_error, on_close=on_close)
+
     wst = threading.Thread(target=wsConnect.run_forever)
     wst.daemon = True
     wst.start()
