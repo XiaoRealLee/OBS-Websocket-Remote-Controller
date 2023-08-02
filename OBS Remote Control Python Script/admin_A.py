@@ -1,4 +1,4 @@
-import obspython as obs
+from obs_scripting import obspython as obs
 from random import randint
 import requests
 import json
