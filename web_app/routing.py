@@ -1,5 +1,7 @@
-from channels.routing import ProtocolTypeRouter
+from django.urls import re_path
 
-application = ProtocolTypeRouter({
-    # 暂时为空，下文填充
-})
+from . import consumers
+
+websocket_urlpatterns = [
+    re_path(r"ws/chat/(?P<room_name>\w+)/$", consumers.WebAppConsumer.as_asgi()),
+]
